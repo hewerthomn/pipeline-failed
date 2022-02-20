@@ -13,28 +13,34 @@ class PipelineController extends AbstractController
     #[Route('/pipeline', methods: ['POST'])]
     public function index(Request $request): Response
     {
-        $params = json_decode($request->getContent(), false, 512, JSON_THROW_ON_ERROR);
+        try {
+            if ($this->mustPublish($request)) {
+                $this->publishToMqtt();
+
+                return new JsonResponse(['message' => 'Published to topic']);
+            }
+        } catch (\Exception $ex) {
+            return new JsonResponse(['message' => $ex->getMessage()], 500);
+        }
+
+        return new JsonResponse(['message' => 'Not published to topic']);
+    }
+
+    private function mustPublish($request): bool
+    {
+        try {
+            $params = json_decode($request->getContent(), false, 512, JSON_THROW_ON_ERROR);
+        } catch (\Exception $ex) {
+            return false;
+        }
+
         $user = $params->user ?? null;
         $objectAttributes = $params->object_attributes ?? null;
 
         $checkStatus = (isset($objectAttributes->status) && $objectAttributes->status === 'failed');
         $checkUser = (isset($user->username) && $user->username === $this->getParameter('pipeline.username'));
 
-        if (!$checkStatus) {
-            return new JsonResponse(['status' => 'Pipelined ' . $objectAttributes->status ?? '-']);
-        }
-
-        if (!$checkUser) {
-            return new JsonResponse(['message' => 'Pipeline for a different user.']);
-        }
-
-        try {
-            $this->publishToMqtt();
-        } catch (\Exception $ex) {
-            return new JsonResponse(['message' => $ex->getMessage()], 500);
-        }
-
-        return new JsonResponse(['message' => 'Published to topic ' . $this->getParameter('mqtt.topic')]);
+        return $checkStatus && $checkUser;
     }
 
     private function publishToMqtt(): void
