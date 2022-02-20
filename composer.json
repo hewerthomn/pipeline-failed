@@ -1,8 +1,8 @@
 {
-    "name": "symfony/skeleton",
+    "name": "hewerthomn/pipeline-failed",
     "type": "project",
     "license": "MIT",
-    "description": "A minimal Symfony project recommended to create bare bones applications",
+    "description": "Handles a Gitlab Webhook and publish to a MQTT topic using Symfony 6",
     "minimum-stability": "stable",
     "prefer-stable": true,
     "require": {

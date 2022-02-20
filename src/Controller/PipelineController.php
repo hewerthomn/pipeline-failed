@@ -37,10 +37,12 @@ class PipelineController extends AbstractController
         $user = $params->user ?? null;
         $objectAttributes = $params->object_attributes ?? null;
 
-        $checkStatus = (isset($objectAttributes->status) && $objectAttributes->status === 'failed');
+        $isPipeline = (isset($params->object_kind) && $params->object_kind === 'pipeline');
+        $isPipelineFailed = (isset($objectAttributes->status) && $objectAttributes->status === 'failed');
+        
         $checkUser = (isset($user->username) && $user->username === $this->getParameter('pipeline.username'));
 
-        return $checkStatus && $checkUser;
+        return $isPipeline && $isPipelineFailed && $checkUser;
     }
 
     private function publishToMqtt(): void
